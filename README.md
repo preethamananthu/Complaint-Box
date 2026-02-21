@@ -1,104 +1,105 @@
 # Complaint Box
 
-Serverless full-stack app built with React (Vite), Tailwind, shadcn/ui and Firebase (Auth, Firestore).
+A modern complaint management web app built with React + Firebase.
 
-Features
-- Email/password auth, persistent sessions
-- Roles (admin / user) stored in `users` collection
-- Create complaints with images
-- Admin: view all complaints, mark resolved
-- Comments stored as subcollections (real-time)
-- Image uploads to Firebase Storage
-- Protected routes and loading states
+It supports role-based access (`user` / `admin`), real-time complaint and comment updates, authentication, and a polished glassmorphic UI with light/dark mode.
 
-Setup
-1. Copy `.env.example` to `.env` and fill Firebase credentials.
+## Features
 
-2. Install deps and run dev server:
+- Public landing page + protected app routes
+- Firebase Authentication (email/password and Google sign-in from login page)
+- Role-based access control using Firestore user profiles
+- Create, view, comment, and manage complaints in real time
+- Admin capabilities for status management and user role management
+- Soft delete for complaints (`isDeleted: true`)
+- Timestamped complaints and comments
+- Custom, user-friendly auth error messages
+
+## Tech Stack
+
+- Frontend: React 19, TypeScript, Vite
+- Styling/UI: Tailwind CSS v4, shadcn/ui, Radix UI, Lucide icons
+- Backend (serverless): Firebase Authentication + Cloud Firestore
+- Hosting: Firebase Hosting
+
+## Project Structure
+
+- `src/pages` - route-level pages
+- `src/components` - reusable UI/app components
+- `src/contexts` - auth/theme context providers
+- `src/services` - Firestore data access layer
+- `firestore.rules` - Firestore security rules
+- `firestore.indexes.json` - Firestore composite indexes
+
+## Prerequisites
+
+- Node.js 18+
+- npm
+- Firebase project
+- Firebase CLI (`npm i -g firebase-tools`)
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_ADMIN_UIDS=uid1,uid2
+```
+
+Notes:
+- `VITE_ADMIN_UIDS` is optional (comma-separated list).
+- Storage is not used by the current app flow, but keeping `VITE_FIREBASE_STORAGE_BUCKET` is harmless.
+
+## Local Development
+
 ```bash
 npm install
 npm run dev
 ```
 
-3. Build and deploy (Firebase CLI):
+## Build
+
 ```bash
 npm run build
+npm run preview
+```
+
+## Firebase Setup & Deploy
+
+Deploy Firestore rules/indexes and Hosting:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+firebase deploy --only hosting
+```
+
+Or deploy all configured Firebase targets:
+
+```bash
 firebase deploy
 ```
 
-Notes
-- Firestore rules are in `firestore.rules` and Storage rules in `storage.rules`.
-- To seed admin users, add their UIDs in `.env` under `VITE_ADMIN_UIDS` (comma separated) before first login.
-# React + TypeScript + Vite
+## Security Model (High Level)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+- Users can create/read complaints and comments when authenticated.
+- Role data is stored in `users/{uid}`.
+- Resolved complaints lock comment mutations.
+- Complaint deletion is soft delete (`isDeleted=true`) via update, not physical delete.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `npm run dev` - start Vite dev server
+- `npm run build` - type-check + production build
+- `npm run preview` - preview production build
+- `npm run lint` - run ESLint
 
-## React Compiler
+## Notes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- After changing `firestore.rules` or `firestore.indexes.json`, redeploy Firestore targets.
+- If Firebase asks about index drift during deploy, keep `firestore.indexes.json` aligned with what you want retained in the project.
