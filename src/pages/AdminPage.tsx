@@ -28,7 +28,7 @@ export default function AdminPage() {
   const changeRole = async (uid: string, role: Role) => {
     try {
       await updateUserRole(uid, role)
-      setUsers(users.map(u => u.uid === uid ? { ...u, role } : u))
+      setUsers(users.map((u) => (u.uid === uid ? { ...u, role } : u)))
       toast.success(`Role updated to ${role}`)
     } catch {
       toast.error('Failed to update role')

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { listenAllComplaints, listenUserComplaints } from '../services/complaints'
+import { getUsersDisplayNames } from '../services/users'
 import Header from '../components/Header'
 import { formatDateTime } from '../lib/date'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const [items, setItems] = useState<any[]>([])
+  const [authorNames, setAuthorNames] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,6 +26,27 @@ export default function DashboardPage() {
         })
     return () => unsub()
   }, [user])
+
+  useEffect(() => {
+    const authorIds = items.map((c) => c.authorId).filter(Boolean)
+    if (authorIds.length === 0) {
+      setAuthorNames({})
+      return
+    }
+
+    let cancelled = false
+    getUsersDisplayNames(authorIds)
+      .then((names) => {
+        if (!cancelled) setAuthorNames(names)
+      })
+      .catch(() => {
+        if (!cancelled) setAuthorNames({})
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [items])
 
   return (
     <div>
@@ -71,7 +94,7 @@ export default function DashboardPage() {
                     <p className="mb-3 line-clamp-3 text-sm text-muted-foreground">{c.description?.slice(0, 150)}</p>
                     <div className="mt-auto flex items-center justify-between">
                       <div className="text-xs text-muted-foreground">
-                        <div>{c.authorName || c.authorId}</div>
+                        <div>{authorNames[c.authorId] || c.authorName || c.authorId}</div>
                         <div>{formatDateTime(c.createdAt)}</div>
                       </div>
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusClass}`}>{c.status}</span>

@@ -1,6 +1,8 @@
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import type { Complaint, Comment } from '../lib/types'
+import { getAdminUserIds } from './users'
+import { createNotification } from './notifications'
 
 const complaintsRef = collection(db, 'complaints')
 
@@ -14,6 +16,22 @@ export async function createComplaint(data: Partial<Complaint>) {
     authorName: data.authorName || null,
     createdAt: serverTimestamp(),
   })
+
+  const adminIds = await getAdminUserIds()
+  await Promise.all(
+    adminIds.map((adminId) =>
+      createNotification({
+        recipientId: adminId,
+        actorId: data.authorId || '',
+        actorName: data.authorName || null,
+        type: 'complaint_created',
+        complaintId: docRef.id,
+        complaintTitle: data.title || null,
+        message: `${data.authorName || 'A user'} lodged a new complaint`,
+      })
+    )
+  )
+
   return docRef.id
 }
 

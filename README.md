@@ -1,25 +1,26 @@
 # Complaint Box
 
-A modern complaint management web app built with React + Firebase.
+A modern, serverless complaint management web application built with React and Firebase.
 
-It supports role-based access (`user` / `admin`), real-time complaint and comment updates, authentication, and a polished glassmorphic UI with light/dark mode.
+Features role-based access control (user/admin), real-time complaint and comment updates, secure authentication, and a polished glassmorphic UI with light/dark mode.
 
 ## Features
 
-- Public landing page + protected app routes
+- Public landing page with protected application routes
 - Firebase Authentication (email/password and Google sign-in from login page)
 - Role-based access control using Firestore user profiles
 - Create, view, comment, and manage complaints in real time
 - Admin capabilities for status management and user role management
 - Soft delete for complaints (`isDeleted: true`)
-- Timestamped complaints and comments
+- Automatic server-side timestamping for complaints and comments
 - Custom, user-friendly auth error messages
+- In-app notifications
 
 ## Tech Stack
 
 - Frontend: React 19, TypeScript, Vite
 - Styling/UI: Tailwind CSS v4, shadcn/ui, Radix UI, Lucide icons
-- Backend (serverless): Firebase Authentication + Cloud Firestore
+- Backend (Serverless): Firebase Authentication and Cloud Firestore (No custom backend server)
 - Hosting: Firebase Hosting
 
 ## Project Structure
@@ -89,7 +90,7 @@ firebase deploy
 
 - Users can create/read complaints and comments when authenticated.
 - Role data is stored in `users/{uid}`.
-- Resolved complaints lock comment mutations.
+- Once a complaint is marked as resolved, further comment mutations are restricted.
 - Complaint deletion is soft delete (`isDeleted=true`) via update, not physical delete.
 
 ## Scripts
@@ -103,3 +104,13 @@ firebase deploy
 
 - After changing `firestore.rules` or `firestore.indexes.json`, redeploy Firestore targets.
 - If Firebase asks about index drift during deploy, keep `firestore.indexes.json` aligned with what you want retained in the project.
+
+## Architecture Overview
+
+The application follows a client-driven, serverless architecture:
+
+- React (Vite) SPA frontend
+- Firebase Authentication for identity management
+- Firestore as the real-time NoSQL database
+- Security enforced via Firestore security rules (role-based)
+- Firebase Hosting for deployment

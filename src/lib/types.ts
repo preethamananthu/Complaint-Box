@@ -29,3 +29,19 @@ export interface Comment {
   createdAt: any
   updatedAt?: any
 }
+
+export type NotificationType = 'complaint_created' | 'comment_added'
+
+export interface AppNotification {
+  id?: string
+  recipientId: string
+  actorId: string
+  actorName?: string | null
+  type: NotificationType
+  complaintId: string
+  complaintTitle?: string | null
+  message: string
+  isRead: boolean
+  createdAt: any
+  readAt?: any
+}

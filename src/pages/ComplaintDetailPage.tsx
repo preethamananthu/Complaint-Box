@@ -11,6 +11,8 @@ import {
   updateComment,
   deleteComment,
 } from '../services/complaints'
+import { getAdminUserIds, getUsersDisplayNames } from '../services/users'
+import { createNotification } from '../services/notifications'
 import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
 import EditComplaintModal from '../components/EditComplaintModal'
@@ -33,6 +35,7 @@ export default function ComplaintDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editingCommentText, setEditingCommentText] = useState('')
+  const [authorNames, setAuthorNames] = useState<Record<string, string | null>>({})
 
   useEffect(() => {
     if (!id) return
@@ -40,6 +43,32 @@ export default function ComplaintDetailPage() {
     const unsub = listenComments(id, setComments)
     return () => unsub()
   }, [id])
+
+  useEffect(() => {
+    const ids = new Set<string>()
+    if (c?.authorId) ids.add(c.authorId)
+    comments.forEach((cm) => {
+      if (cm.authorId) ids.add(cm.authorId)
+    })
+
+    if (ids.size === 0) {
+      setAuthorNames({})
+      return
+    }
+
+    let cancelled = false
+    getUsersDisplayNames(Array.from(ids))
+      .then((names) => {
+        if (!cancelled) setAuthorNames(names)
+      })
+      .catch(() => {
+        if (!cancelled) setAuthorNames({})
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [c?.authorId, comments])
 
   const submitComment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +80,32 @@ export default function ComplaintDetailPage() {
 
     try {
       await addComment(id, { text, authorId: user.uid, authorName: user.displayName })
+      if (user.role === 'admin') {
+        await createNotification({
+          recipientId: c.authorId,
+          actorId: user.uid,
+          actorName: user.displayName,
+          type: 'comment_added',
+          complaintId: id,
+          complaintTitle: c.title,
+          message: `${user.displayName || 'Admin'} commented on your complaint`,
+        })
+      } else {
+        const adminIds = await getAdminUserIds()
+        await Promise.all(
+          adminIds.map((adminId) =>
+            createNotification({
+              recipientId: adminId,
+              actorId: user.uid,
+              actorName: user.displayName,
+              type: 'comment_added',
+              complaintId: id,
+              complaintTitle: c.title,
+              message: `${user.displayName || 'A user'} added a comment`,
+            })
+          )
+        )
+      }
       setText('')
       toast.success('Comment added')
     } catch {
@@ -143,7 +198,7 @@ export default function ComplaintDetailPage() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">{c.title}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">By {c.authorName || c.authorId}</p>
+              <p className="mt-1 text-sm text-muted-foreground">By {authorNames[c.authorId] || c.authorName || c.authorId}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`rounded-full border px-3 py-1 text-sm font-medium ${statusClass}`}>{c.status}</span>
@@ -260,7 +315,7 @@ export default function ComplaintDetailPage() {
                         </div>
                         
                         <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{cm.authorName || cm.authorId}</span>
+                          <span>{authorNames[cm.authorId] || cm.authorName || cm.authorId}</span>
                           <span>{formatDateTime(cm.createdAt)}</span>
                         </div>
                       </>

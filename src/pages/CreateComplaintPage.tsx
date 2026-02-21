@@ -21,7 +21,12 @@ export default function CreateComplaintPage() {
     }
     setLoading(true)
     try {
-      const id = await createComplaint({ title, description, authorId: user.uid, authorName: user.displayName })
+      const id = await createComplaint({
+        title,
+        description,
+        authorId: user.uid,
+        authorName: user.displayName,
+      })
       toast.success('Complaint created successfully')
       nav(`/complaints/${id}`)
     } catch (err: any) {
