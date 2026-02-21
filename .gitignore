@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+firebase-debug.log*
+
+# Dependencies / build outputs
+node_modules
+dist
+dist-ssr
+coverage
+*.tsbuildinfo
+.cache
+.parcel-cache
+.turbo
+.eslintcache
+
+# Environment files (sensitive)
+.env
+.env.*
+!.env.example
+
+# Local runtime/config files
+.firebase/
+*.local
+.npmrc.local
+.pnpm-store
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.iml
+*.local
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

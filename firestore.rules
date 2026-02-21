@@ -1,0 +1,83 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection: store user roles
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow update: if request.auth != null && (
+        // user can update own profile but cannot change role
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        // admin can update any user's role
+        || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+      allow delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Complaints collection
+    match /complaints/{complaintId} {
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.isDeleted == false;
+
+      allow read: if request.auth != null;
+
+      allow update: if request.auth != null && (
+        (
+          // author can edit only while open, and can soft-delete anytime if not already deleted
+          request.auth.uid == resource.data.authorId
+          && resource.data.isDeleted != true
+          && (
+            resource.data.status == 'open'
+            || request.resource.data.isDeleted == true
+          )
+        )
+        || (
+          // admin can edit only while open, and can soft-delete anytime if not already deleted
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          && resource.data.isDeleted != true
+          && (
+            resource.data.status == 'open'
+            || request.resource.data.isDeleted == true
+          )
+        )
+      );
+
+      // Physical deletes are disabled; use soft-delete (isDeleted = true).
+      allow delete: if false;
+
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string
+          && get(/databases/$(database)/documents/complaints/$(complaintId)).data.status == 'open'
+          && get(/databases/$(database)/documents/complaints/$(complaintId)).data.isDeleted != true;
+        allow read: if request.auth != null;
+        allow update: if request.auth != null
+          && request.resource.data.text is string
+          && get(/databases/$(database)/documents/complaints/$(complaintId)).data.status == 'open'
+          && get(/databases/$(database)/documents/complaints/$(complaintId)).data.isDeleted != true
+          && (
+            request.auth.uid == resource.data.authorId
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          );
+        allow delete: if request.auth != null && (
+          get(/databases/$(database)/documents/complaints/$(complaintId)).data.status == 'open'
+          && get(/databases/$(database)/documents/complaints/$(complaintId)).data.isDeleted != true
+          && (
+            request.auth.uid == resource.data.authorId
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          )
+        );
+      }
+    }
+
+    // Fallback: authenticated reads only
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
