@@ -164,6 +164,17 @@
   .glass-input {
     @apply rounded-lg border border-white/50 bg-white/45 px-3 py-2 text-foreground backdrop-blur-xl outline-none placeholder:text-muted-foreground/80 focus:ring-2 focus:ring-white/60 dark:border-white/10 dark:bg-white/8 dark:focus:ring-white/20;
   }
+  /* Native select dropdown menus on Windows ignore some utility colors.
+     Force a readable dark popup + option text in dark mode. */
+  .dark select.glass-input {
+    color-scheme: dark;
+    background-color: oklch(0.24 0.004 260);
+    color: oklch(0.95 0.004 260);
+  }
+  .dark select.glass-input option {
+    background-color: oklch(0.24 0.004 260);
+    color: oklch(0.95 0.004 260);
+  }
   .error-banner {
     @apply rounded-lg border border-rose-300/70 bg-rose-100/70 p-3 text-sm text-rose-800 dark:border-rose-700/60 dark:bg-rose-900/35 dark:text-rose-200;
   }
